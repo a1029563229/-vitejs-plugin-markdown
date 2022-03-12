@@ -1,0 +1,43 @@
+Arguments: 
+  /Users/Macxdouble/.nvm/versions/node/v14.17.0/bin/node /Users/Macxdouble/.nvm/versions/node/v14.17.0/bin/yarn add markdown-it
+
+PATH: 
+  /Library/Frameworks/Python.framework/Versions/3.9/bin:/Users/Macxdouble/.nvm/versions/node/v14.17.0/bin:/Library/Frameworks/Python.framework/Versions/3.7/bin:/Library/Frameworks/Python.framework/Versions/3.6/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/Applications/Wireshark.app/Contents/MacOS:/Library/Frameworks/Python.framework/Versions/3.9/bin:/Users/Macxdouble/.nvm/versions/node/v14.17.0/bin:/Library/Frameworks/Python.framework/Versions/3.7/bin:/Library/Frameworks/Python.framework/Versions/3.6/bin:/Library/Frameworks/Mono.framework/Versions/5.10.1/bin:/Users/Macxdouble/project/excerpt/go/bin:/Users/Macxdouble/bin:/Users/Macxdouble/bin/nginx/sbin:/Library/Frameworks/Mono.framework/Versions/5.10.1/bin:/Users/Macxdouble/project/excerpt/go/bin:/Users/Macxdouble/bin:/Users/Macxdouble/bin/nginx/sbin
+
+Yarn version: 
+  1.13.0
+
+Node version: 
+  14.17.0
+
+Platform: 
+  darwin x64
+
+Trace: 
+  Error: getaddrinfo ENOTFOUND registry.npmmirror.com
+      at GetAddrInfoReqWrap.onlookup [as oncomplete] (dns.js:67:26)
+
+npm manifest: 
+  {
+    "name": "@vitejs/plugin-markdown",
+    "version": "0.0.1",
+    "description": "convert markdown tag to html",
+    "main": "index.js",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "peerDependencies": {
+      "vite": "^2.5.10"
+    },
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+      "@types/node": "^17.0.21"
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile

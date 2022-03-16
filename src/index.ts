@@ -1,7 +1,7 @@
 const path = require('path');
 const file = require('fs');
 const MarkdownIt = require('markdown-it');
-import type { Plugin } from 'vite'
+import { Plugin } from 'vite'
 import { style } from "./assets/juejin.style";
 
 const md = new MarkdownIt();
@@ -16,6 +16,14 @@ export const transformMarkdown = (mdText: string): string => {
 
 const mdRelationMap = new Map<string, string>();
 
+class MdModule {
+  public url: string;
+  
+  constructor(url: string) {
+    this.url = url;
+  }
+}
+
 export default function markdownPlugin(): Plugin {
   const vueRE = /\.vue$/;
   const markdownRE = /\<g-markdown.*\/\>/g;
@@ -29,28 +37,30 @@ export default function markdownPlugin(): Plugin {
     enforce: 'pre',
 
     handleHotUpdate(ctx) {
-      const { file, server } = ctx;
+      const { file, server, modules } = ctx;
       
+      // 过滤非 md 文件
       if (path.extname(file) !== '.md') return;
 
-      const relationModule = mdRelationMap.get(ctx.file) || '';
-      console.log({
-        type: 'js-update',
-        path: '/src/components/TestMd.vue',
-        acceptedPath: '/src/components/TestMd.vue',
-        timestamp: new Date().getTime()
-      });
+      // 找到引入该 md 文件的 vue 文件
+      const relationId = mdRelationMap.get(file) as string;
+      // 找到该 vue 文件的 moduleNode
+      const relationModule = [...server.moduleGraph.getModulesByFile(relationId)!][0];
+      // 发送 websocket 消息，进行单文件热重载
       server.ws.send({
         type: 'update',
         updates: [
           {
             type: 'js-update',
-            path: '/src/components/TestMd.vue',
-            acceptedPath: '/src/components/TestMd.vue',
+            path: relationModule.file!,
+            acceptedPath: relationModule.file!,
             timestamp: new Date().getTime()
           }
         ]
-      })
+      });
+
+      // 指定需要重新编译的模块
+      return [...modules, relationModule]
     },
 
     // 代码转译，这个函数的功能类似于 `webpack` 的 `loader`
@@ -74,6 +84,7 @@ export default function markdownPlugin(): Plugin {
         const mdText = file.readFileSync(mdFilePath, 'utf-8');
         // 将 g-markdown 标签替换成转换后的 html 文本
         transformCode = transformCode.replace(md, transformMarkdown(mdText));
+        // 记录引入当前 md 文件的 vue 文件 id
         mdRelationMap.set(mdFilePath, id);
       })
 

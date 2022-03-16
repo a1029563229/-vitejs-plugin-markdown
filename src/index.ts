@@ -1,9 +1,20 @@
 const path = require('path');
 const file = require('fs');
+const MarkdownIt = require('markdown-it');
 import type { Plugin } from 'vite'
-import { transformMarkdown } from "./transform";
-import qs from "qs";
 import { style } from "./assets/juejin.style";
+
+const md = new MarkdownIt();
+export const transformMarkdown = (mdText: string): string => {
+  // 加上一个 class 名为 article-content 的 wrapper，方便我们等下添加样式
+  return `
+    <section class='article-content'>
+      ${md.render(mdText)}
+    </section>
+  `;
+}
+
+const mdRelationMap = new Map<string, string>();
 
 export default function markdownPlugin(): Plugin {
   const vueRE = /\.vue$/;
@@ -11,24 +22,61 @@ export default function markdownPlugin(): Plugin {
   const filePathRE = /(?<=file=("|')).*(?=('|"))/;
   
   return {
+    // 插件名称
     name: 'vite:markdown',
 
+    // 该插件在 plugin-vue 插件之前执行，这样就可以直接解析到原模板文件
     enforce: 'pre',
 
+    handleHotUpdate(ctx) {
+      const { file, server } = ctx;
+      
+      if (path.extname(file) !== '.md') return;
+
+      const relationModule = mdRelationMap.get(ctx.file) || '';
+      console.log({
+        type: 'js-update',
+        path: '/src/components/TestMd.vue',
+        acceptedPath: '/src/components/TestMd.vue',
+        timestamp: new Date().getTime()
+      });
+      server.ws.send({
+        type: 'update',
+        updates: [
+          {
+            type: 'js-update',
+            path: '/src/components/TestMd.vue',
+            acceptedPath: '/src/components/TestMd.vue',
+            timestamp: new Date().getTime()
+          }
+        ]
+      })
+    },
+
+    // 代码转译，这个函数的功能类似于 `webpack` 的 `loader`
     transform(code, id, opt) {
       if (!vueRE.test(id) || !markdownRE.test(code)) return code;
 
       const mdList = code.match(markdownRE);
       let transformCode = code;
       mdList?.forEach(md => {
+        // 匹配 markdown 文件目录
         const fileRelativePaths = md.match(filePathRE);
         if (!fileRelativePaths?.length) return;
 
+        // markdown 文件的相对路径
         const fileRelativePath = fileRelativePaths![0];
-        const filePath = path.resolve(path.dirname(id), fileRelativePath);
-        const mdText = file.readFileSync(filePath, 'utf-8');
+        // 找到当前 vue 的目录
+        const fileDir = path.dirname(id);
+        // 根据当前 vue 文件的目录和引入的 markdown 文件相对路径，拼接出 md 文件的绝对路径
+        const mdFilePath = path.resolve(fileDir, fileRelativePath);
+        // 读取 markdown 文件的内容
+        const mdText = file.readFileSync(mdFilePath, 'utf-8');
+        // 将 g-markdown 标签替换成转换后的 html 文本
         transformCode = transformCode.replace(md, transformMarkdown(mdText));
+        mdRelationMap.set(mdFilePath, id);
       })
+
 
       transformCode = `
         ${transformCode}
@@ -36,6 +84,8 @@ export default function markdownPlugin(): Plugin {
           ${style}
         </style>
       `
+      
+      // 将转换后的代码返回
       return transformCode;
     }
   }
